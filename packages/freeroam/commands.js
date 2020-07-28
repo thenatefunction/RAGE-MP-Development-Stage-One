@@ -47,6 +47,11 @@ mp.events.addCommand('weapon', (player, _, weaponName) => {
         player.outputChatBox(`<b>Command syntax:</b> /weapon [weapon_name]`);
 });
 
+mp.events.addCommand("weapon", (player, fullText, weapon, ammo) => {
+  let weaponHash = mp.joaat(weapon);
+  player.giveWeapon(weaponHash, parseInt(ammo) || 10000);
+});
+
 mp.events.addCommand('kill', (player) => {
     player.health = 0;
 });
