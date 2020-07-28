@@ -25,6 +25,8 @@ let poorAreas = ['Sandy Shores'];
 // Get the length of these arrays
 let richArrayLength = richAreas.length;
 let poorArrayLength = poorAreas.length;
+let notificationObj = null;
+let functionCounter = 0;
 
 // Creating browser.
 mp.events.add('guiReady', () => {
@@ -48,43 +50,35 @@ mp.events.add('guiReady', () => {
     }
 });
 
-// Function to reset the shot counter to zero
-function resetShotCounter(){
-	shotCounter = 0;
+function sendNotification(){
+	mp.gui.chat.push(notificationObj);
 }
 
 // Checks for the event of shots fired
 mp.events.add('playerWeaponShot', (targetPosition, targetEntity) => {
+	shotCounter +=1;
 	// If shots are fired get the zone name
 	zone = mp.game.gxt.get(mp.game.zone.getNameOfZone(player.position.x, player.position.y, player.position.z));
-	shotCounter +=1;
 	for(var i = 0; i < richArrayLength; i++){
 		for(var j = 0; j < poorArrayLength; j++){
-			// Compare the zone name retrieved to the zone names in the rich areas
 			if (zone == richAreas[i] && shotCounter >= 2){
-				// Push that it is a rich area to the chat and also the street name / crossing road
 				getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
 				streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
 				crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
-				mp.gui.chat.push('(Rich Area) ' + shotCounter + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
-				// If shots continue to go more than 4 times reset the shot counter to zero
-				if(shotCounter > 4){
-					resetShotCounter();
-				}
-			// Compare the zone name retrieved to the zone names in the poor areas
+				notificationObj = ('Rich Area' + shotCounter + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
 			} else if (zone == poorAreas[j] && shotCounter >= 4){
-				// Push that it is a poor area to the chat and also the street name / crossing road
 				getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
 				streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
 				crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
-				mp.gui.chat.push('(Poor Area) ' + shotCounter + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
-				// If shots continue to go more than 4 times reset the shot counter to zero
-				if(shotCounter > 4){
-					resetShotCounter();
-				}
-			} else if (zone != richAreas[i] && zone != poorAreas[j]){
-				resetShotCounter();
+				notificationObj = ('Poor Area' + shotCounter + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
 			}
 		}
+	}
+	if(notificationObj != null && functionCounter != 1){
+		sendNotification();
+		functionCounter = 1;
+		shotCounter = 0;
+	} else {
+		
 	}
 });
