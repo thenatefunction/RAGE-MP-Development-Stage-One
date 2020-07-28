@@ -16,7 +16,27 @@ const player = mp.players.local;
 let getStreet = undefined;
 let streetName = undefined;
 let crossingRoad = undefined;
+// Initialize shot counter
+let shotCounter = 0;
+let richBool = false;
+let poorBool = false;
+let notKnownBool = false;
 
+let richStreets = ['Abe Milton Parkway', 'Boulevard Del Perro', 'Carcer Way', 
+                   'Caesar Place', 'Dorset Drive', 'Dorset Place', 
+				   'Dunstable Drive', 'Dunstable Lane', 'Eastbourne Way',
+				   'Edwood Way', 'Greenwich Way', 'Heritage Way',
+				   'Mad Wayne Thunder Drive', 'Marathon Avenue', 'Movie Star Way',
+				   'Portola Drive', 'Rockford Drive', 'San Vitus Boulevard',
+				   'South Boulevard Del Perro', 'South Mo Milton Drive', 'South Rockford Drive',
+				   'Spanish Avenue', 'West Eclipse Boulevard'];
+				   
+let poorStreets = ['Adam\'s Apple Boulevard', 'Alta Street', 'Capital Boulevard',
+                    'Carson Avenue', 'Crusade Road', 'Forum Drive', 'Innocence Boulevard',
+					'Little Bighorn Avenue', 'Power Street', 'Strawberry Avenue'];
+
+let richArrayLength = richStreets.length;
+let poorArrayLength = poorStreets.length;
 // Creating browser.
 mp.events.add('guiReady', () => {
     if (!menu) {
@@ -41,13 +61,32 @@ mp.events.add('guiReady', () => {
 
 // Checks for the event of shots fired
 mp.events.add('playerWeaponShot', (targetPosition, targetEntity) => {
-	// If shots are fired by a player get the street name and crossing road from that players position
-    getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
-    streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
-    crossingRoad  = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
-    if (streetName != '' && crossingRoad == ''){
-        mp.gui.chat.push('Shots Fired at: ' + streetName);
-    } else if (streetName != '' && crossingRoad != ''){
-        mp.gui.chat.push('Shots Fired at: ' + streetName + ' / ' + crossingRoad);
+	shotCounter +=1;
+	for(var i = 0; i < richArrayLength; i++){
+		for(var j = 0; j < poorArrayLength; j++){
+			if (streetName == richStreets[i]){
+				richBool = true;
+			} else if (streetName == poorStreets[j]){
+				poorBool = true;
+			} else {
+				notKnownBool = true;
+			}
+		}
+	}
+	if (richBool == true){
+		getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
+		streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
+		crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
+		mp.gui.chat.push('(Rich Area)' + shotCounter + 'shots fired at: ' + streetName + ' - ' + crossingRoad);
+	} else if (poorBool == true){
+		getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
+		streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
+		crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
+		mp.gui.chat.push('(Poor Area)' + shotCounter + 'shots fired at: ' + streetName + ' - ' + crossingRoad);
+	} else {
+		getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
+		streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
+		crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
+		mp.gui.chat.push('(Unknown Area)' + shotCounter + 'shots fired at: ' + streetName + ' - ' + crossingRoad);
 	}
 });
