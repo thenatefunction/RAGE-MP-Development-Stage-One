@@ -1,14 +1,14 @@
 // CEF browser.
 let menu;
 // Configs.
-let vehicles     = JSON.parse(require('./freeroam/configs/vehicles.js'));
-let skins        = JSON.parse(require('./freeroam/configs/skins.js')).Skins;
-let weapon       = JSON.parse(require('./freeroam/configs/weapon.js'));
+let vehicles = JSON.parse(require('./freeroam/configs/vehicles.js'));
+let skins = JSON.parse(require('./freeroam/configs/skins.js')).Skins;
+let weapon = JSON.parse(require('./freeroam/configs/weapon.js'));
 // Initialization functions.
 let vehiclesInit = require('./freeroam/menu_initialization/vehicles.js');
-let skinsinit    = require('./freeroam/menu_initialization/skins.js');
-let weaponInit   = require('./freeroam/menu_initialization/weapon.js');
-let playersInit  = require('./freeroam/menu_initialization/players.js');
+let skinsinit = require('./freeroam/menu_initialization/skins.js');
+let weaponInit = require('./freeroam/menu_initialization/weapon.js');
+let playersInit = require('./freeroam/menu_initialization/players.js');
 
 // Get the local player object
 const player = mp.players.local;
@@ -17,16 +17,20 @@ let zone = undefined;
 let getStreet = undefined;
 let streetName = undefined;
 let crossingRoad = undefined;
-// Initialize shot counter
-let shotCounter = 0;
 // Create arrays of zone names
-let richAreas = ['Vinewood Hills'];
+let richAreas = ['Vinewood Hills', 'Galileo Observatory'];
 let poorAreas = ['Sandy Shores'];
 // Get the length of these arrays
 let richArrayLength = richAreas.length;
 let poorArrayLength = poorAreas.length;
-let notificationObj = null;
+let notificationObj;
 let functionCounter = 0;
+let logNotification;
+let timeBool = false;
+let startTime = 0;
+let timerVar;
+let timerActive = 0;
+let chanceOfPD = Math.random();
 
 // Creating browser.
 mp.events.add('guiReady', () => {
@@ -50,35 +54,72 @@ mp.events.add('guiReady', () => {
     }
 });
 
-function sendNotification(){
-	mp.gui.chat.push(notificationObj);
+function waitTimer() {
+    startTime = startTime + 1;
+    timeVar = setTimeout(waitTimer, 1000);
+    mp.gui.chat.push(startTime.toString());
+    if (startTime == 600) {
+        stopTimer();
+        resetTimer();
+        timeBool = false;
+        functionCounter = 0;
+    }
+}
+
+function startTimer() {
+    if (!timerActive) {
+        timerActive = 1;
+        waitTimer();
+    }
+}
+
+function stopTimer() {
+    clearTimeout(timeVar);
+    timerActive = 0;
+}
+
+function resetTimer() {
+    startTime = 0;
+}
+
+function checkAreaStatus() {
+    zone = mp.game.gxt.get(mp.game.zone.getNameOfZone(player.position.x, player.position.y, player.position.z));
+    for (var i = 0; i < richArrayLength; i++) {
+        for (var j = 0; j < poorArrayLength; j++) {
+            if (zone == richAreas[i] && chanceOfPD < 0.60) {
+                getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
+                streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
+                crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
+                notificationObj = ('Rich Area' + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
+            } else if (zone == poorAreas[j] && chanceOfPD < 0.15) {
+                getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
+                streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
+                crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
+                notificationObj = ('Poor Area' + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
+            }
+        }
+    }
+}
+
+function sendNotification() {
+    logNotification = notificationObj;
+    mp.gui.chat.push(notificationObj);
 }
 
 // Checks for the event of shots fired
 mp.events.add('playerWeaponShot', (targetPosition, targetEntity) => {
-	shotCounter +=1;
-	// If shots are fired get the zone name
-	zone = mp.game.gxt.get(mp.game.zone.getNameOfZone(player.position.x, player.position.y, player.position.z));
-	for(var i = 0; i < richArrayLength; i++){
-		for(var j = 0; j < poorArrayLength; j++){
-			if (zone == richAreas[i] && shotCounter >= 2){
-				getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
-				streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
-				crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
-				notificationObj = ('Rich Area' + shotCounter + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
-			} else if (zone == poorAreas[j] && shotCounter >= 4){
-				getStreet = mp.game.pathfind.getStreetNameAtCoord(player.position.x, player.position.y, player.position.z, 0, 0);
-				streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
-				crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
-				notificationObj = ('Poor Area' + shotCounter + 'shots fired at: ' + streetName + ' / ' + crossingRoad);
-			}
-		}
-	}
-	if(notificationObj != null && functionCounter != 1){
-		sendNotification();
-		functionCounter = 1;
-		shotCounter = 0;
-	} else {
-		
-	}
+    checkAreaStatus();
+    if (notificationObj != null && functionCounter != 1 && timeBool == false) {
+        sendNotification();
+        timeBool = true;
+        startTimer();
+        functionCounter = 1;
+    } else if (timeBool == true && functionCounter == 1 && logNotification == notificationObj) {
+
+    } else if (notificationObj != logNotification) {
+        stopTimer();
+        resetTimer();
+        startTimer();
+        sendNotification();
+    }
 });
