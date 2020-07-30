@@ -23,7 +23,7 @@ let poorAreas = ['Alamo Sea', 'Braddock Pass', 'Braddock Tunnel', 'Calafia Bridg
 // Get the length of these arrays
 let richArrayLength = richAreas.length;
 let poorArrayLength = poorAreas.length;
-// Create variables for PD alerts, a counter, a timer & a random number variable
+// Create variables for holding location and a random number variable
 let notificationObj = null;
 let notifObj;
 let chanceOfPD = Math.random();
@@ -61,6 +61,7 @@ mp.events.add('playerWeaponShot', (targetPosition, targetEntity) => {
                 streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
                 crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
                 notifObj = ('Shots fired in a rich area at: ' + streetName + ' - ' + crossingRoad);
+				// Convert the obj to a string
 				notificationObj = JSON.stringify(notifObj);
                 // If the area is a rich zone then chance of PD being pinged is 15%
             } else if (zone == poorAreas[j] && chanceOfPD < 0.15) {
@@ -68,10 +69,12 @@ mp.events.add('playerWeaponShot', (targetPosition, targetEntity) => {
                 streetName = mp.game.ui.getStreetNameFromHashKey(getStreet.streetName); // Return string, if exist
                 crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
                 notifObj = ('Shots fired in a poor area at: ' + streetName + ' - ' + crossingRoad);
+				// Convert the obj to a string
 				notificationObj = JSON.stringify(notifObj);
             }
         }
     }
+	// If there is a location call the remote function "shotsFired" and pass in player & notificationObj
 	if(notificationObj != null){
 	mp.events.callRemote("shotsFired", (player, notificationObj));
 	}

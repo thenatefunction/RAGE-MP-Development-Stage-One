@@ -1,5 +1,6 @@
 let skins = require('./configs/skins.json').Skins;
 let spawnPoints = require('./configs/spawn_points.json').SpawnPoints;
+// Initialize functionCounter, timer and PD notification variables
 let functionCounter = 0;
 let timeBool = false;
 let waitTimer;
@@ -131,32 +132,45 @@ mp.events.add('clientData', function() {
     }
 });
 
+// Function to clear the timer
 function waitTimerFunc() {
 	clearTimeout(waitTimer);
 }
 
+// Function to send PD an alert
 function sendNotification(){
 	console.log(notificationSendObj);
 }
 
 mp.events.add("shotsFired", (player, notificationObj) => {
+	// If shots are fired check if there is a location available
 	if (notificationObj != null && functionCounter != 1 && timeBool == false) {
 		timeBool = true;
 		functionCounter = 1;
+		// Start the 10 minute Timer
 		waitTimer = setTimeout(waitTimerFunc, 600000);
+		// Log the location
 		logNotification = notificationObj;
 		notificationSendObj = notificationObj;
+		// Send PD an alert of the location
 		sendNotification();
+	// If the timer is running do nothing
 	} else if (timeBool == true && functionCounter == 1 && logNotification == notificationObj) {
-		// Do Nothing
+	
+	// If the location retrieved is not the same as the logged location
 	} else if (notificationObj != logNotification) {
 		timeBool = true;
 		functionCounter = 1;
+		// Clear the timer
 		waitTimerFunc();
+		// Start a new timer
 		waitTimer = setTimeout(waitTimerFunc, 600000);
+		// Log the location
 		logNotification = notificationObj;
 		notificationSendObj = notificationObj;
+		// Send PD an alert of the location
 		sendNotification();
+	// If the timer ends set the location to null & clear the timer
 	} else if (waitTimer == 600){
 		notificationObj == null;
 		waitTimerFunc();
