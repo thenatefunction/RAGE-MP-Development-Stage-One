@@ -1,5 +1,10 @@
-let skins       = require('./configs/skins.json').Skins;
+let skins = require('./configs/skins.json').Skins;
 let spawnPoints = require('./configs/spawn_points.json').SpawnPoints;
+let functionCounter = 0;
+let timeBool = false;
+let waitTimer;
+let logNotification;
+let notificationSendObj;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -124,4 +129,36 @@ mp.events.add('clientData', function() {
 
         break;
     }
+});
+
+function waitTimerFunc() {
+	clearTimeout(waitTimer);
+}
+
+function sendNotification(){
+	console.log(notificationSendObj);
+}
+
+mp.events.add("shotsFired", (player, notificationObj) => {
+	if (notificationObj != null && functionCounter != 1 && timeBool == false) {
+		timeBool = true;
+		functionCounter = 1;
+		waitTimer = setTimeout(waitTimerFunc, 600000);
+		logNotification = notificationObj;
+		notificationSendObj = notificationObj;
+		sendNotification();
+	} else if (timeBool == true && functionCounter == 1 && logNotification == notificationObj) {
+		// Do Nothing
+	} else if (notificationObj != logNotification) {
+		timeBool = true;
+		functionCounter = 1;
+		waitTimerFunc();
+		waitTimer = setTimeout(waitTimerFunc, 600000);
+		logNotification = notificationObj;
+		notificationSendObj = notificationObj;
+		sendNotification();
+	} else if (waitTimer == 600){
+		notificationSendObj == null;
+		waitTimerFunc();
+	}
 });
