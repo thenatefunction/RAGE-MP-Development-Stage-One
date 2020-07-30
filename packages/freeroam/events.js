@@ -158,7 +158,7 @@ mp.events.add("shotsFired", (player, notificationObj) => {
 		notificationSendObj = notificationObj;
 		sendNotification();
 	} else if (waitTimer == 600){
-		notificationSendObj == null;
+		notificationObj == null;
 		waitTimerFunc();
 	}
 });
