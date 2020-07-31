@@ -128,10 +128,14 @@ mp.events.add('clientData', function() {
     }
 });
 
+// Function to send a ping to PD (Console for now)
+function sendLocationPing(pdPingObj){
+	console.log(pdPingObj);
+}
 // Function activates if client-side calls the remote function "shotsFired"
 mp.events.add("shotsFired", (player, locationStringObj) => {
     if (locationStringObj != null) {
         pdPingObj = locationStringObj;
-        console.log(pdPingObj);
+		sendLocationPing(pdPingObj);
     }
 });
