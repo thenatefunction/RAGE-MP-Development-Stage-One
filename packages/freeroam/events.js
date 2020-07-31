@@ -1,11 +1,13 @@
 let skins = require('./configs/skins.json').Skins;
 let spawnPoints = require('./configs/spawn_points.json').SpawnPoints;
-// Initialize functionCounter, timer and PD notification variables
+// Initialize a function counter
 let functionCounter = 0;
+// Initialize a timer boolean variable to false
 let timeBool = false;
+// Initialize a wait timer, a log variable and a ping variable
 let waitTimer;
-let logNotification;
-let notificationSendObj;
+let logLastLocation;
+let pdPingObj;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -65,114 +67,107 @@ mp.events.add('clientData', function() {
     let args = JSON.parse(arguments[1]);
 
     switch (args[0]) {
-    // Suicide.
-    case 'kill':
-        player.health = 0;
+        // Suicide.
+        case 'kill':
+            player.health = 0;
 
-        break;
-    // Change skin.
-    case 'skin':
-        player.model = args[1];
+            break;
+            // Change skin.
+        case 'skin':
+            player.model = args[1];
 
-        break;
-    // Creating new vehicle for player.
-    case 'vehicle':
-        // If player has vehicle - change model.
-        if (player.customData.vehicle) {
-            let pos = player.position;
-            pos.x += 2;
-            player.customData.vehicle.position = pos;
-            player.customData.vehicle.model = mp.joaat(args[1]);
-        // Else - create new vehicle.
-        } else {
-            let pos = player.position;
-            pos.x += 2;
-            player.customData.vehicle = mp.vehicles.new(mp.joaat(args[1]), pos);
-        }
-        // Hide vehicle buttons (bugfix).
-        player.call('hideVehicleButtons');
+            break;
+            // Creating new vehicle for player.
+        case 'vehicle':
+            // If player has vehicle - change model.
+            if (player.customData.vehicle) {
+                let pos = player.position;
+                pos.x += 2;
+                player.customData.vehicle.position = pos;
+                player.customData.vehicle.model = mp.joaat(args[1]);
+                // Else - create new vehicle.
+            } else {
+                let pos = player.position;
+                pos.x += 2;
+                player.customData.vehicle = mp.vehicles.new(mp.joaat(args[1]), pos);
+            }
+            // Hide vehicle buttons (bugfix).
+            player.call('hideVehicleButtons');
 
-        break;
-        // Weapon.
-    case 'weapon':
-        player.giveWeapon(mp.joaat(args[1]), 1000);
+            break;
+            // Weapon.
+        case 'weapon':
+            player.giveWeapon(mp.joaat(args[1]), 1000);
 
-        break;
-    // Repair the vehicle.
-    case 'fix':
-        if (player.vehicle)
-            player.vehicle.repair();
+            break;
+            // Repair the vehicle.
+        case 'fix':
+            if (player.vehicle)
+                player.vehicle.repair();
 
-        break;
-    // Flip the vehicle.
-    case 'flip':
-        if (player.vehicle) {
-            let rotation = player.vehicle.rotation;
-            rotation.y = 0;
-            player.vehicle.rotation = rotation;
-        }
-
-        break;
-    // Vehicle color or neon.
-    case 'server_color':
-        if (player.vehicle) {
-            if (args[1] == 'color') {
-                let colorPrimary = JSON.parse(args[2]);
-                let colorSecondary = JSON.parse(args[3]);
-                player.vehicle.setColourRGB(colorPrimary.r, colorPrimary.g, colorPrimary.b, colorSecondary.r, colorSecondary.g, colorSecondary.b);
+            break;
+            // Flip the vehicle.
+        case 'flip':
+            if (player.vehicle) {
+                let rotation = player.vehicle.rotation;
+                rotation.y = 0;
+                player.vehicle.rotation = rotation;
             }
 
-            if (args[1] == 'neon') {
-                let color = JSON.parse(args[2]);
-                player.vehicle.setNeonColour(color.r, color.g, color.b);
-            }
-        }
+            break;
+            // Vehicle color or neon.
+        case 'server_color':
+            if (player.vehicle) {
+                if (args[1] == 'color') {
+                    let colorPrimary = JSON.parse(args[2]);
+                    let colorSecondary = JSON.parse(args[3]);
+                    player.vehicle.setColourRGB(colorPrimary.r, colorPrimary.g, colorPrimary.b, colorSecondary.r, colorSecondary.g, colorSecondary.b);
+                }
 
-        break;
+                if (args[1] == 'neon') {
+                    let color = JSON.parse(args[2]);
+                    player.vehicle.setNeonColour(color.r, color.g, color.b);
+                }
+            }
+
+            break;
     }
 });
 
 // Function to clear the timer
-function waitTimerFunc() {
-	clearTimeout(waitTimer);
+function clearTimer() {
+    clearTimeout(waitTimer);
 }
 
 // Function to send PD an alert
-function sendNotification(){
-	console.log(notificationSendObj);
+function sendNotification() {
+    console.log(pdPingObj);
 }
 
-mp.events.add("shotsFired", (player, notificationObj) => {
-	// If shots are fired check if there is a location available
-	if (notificationObj != null && functionCounter != 1 && timeBool == false) {
+// Function activates if client-side calls the remote function "shotsFired"
+mp.events.add("shotsFired", (player, locationStringObj) => {
+    if (locationStringObj != null && functionCounter != 1 && timeBool == false) {
+        timeBool = true;
+		functionCounter = 1;
+        waitTimer = setTimeout(clearTimer, 600000);
+        logLastLocation = locationStringObj;
+        pdPingObj = locationStringObj;
+        sendNotification();
+    } else if (timeBool == true && functionCounter == 1 && logLastLocation == locationStringObj) {
+
+    } else if (locationStringObj != logLastLocation) {
 		timeBool = true;
 		functionCounter = 1;
-		// Start the 10 minute Timer
-		waitTimer = setTimeout(waitTimerFunc, 600000);
-		// Log the location
-		logNotification = notificationObj;
-		notificationSendObj = notificationObj;
-		// Send PD an alert of the location
-		sendNotification();
-	// If the timer is running do nothing
-	} else if (timeBool == true && functionCounter == 1 && logNotification == notificationObj) {
-	
-	// If the location retrieved is not the same as the logged location
-	} else if (notificationObj != logNotification) {
-		timeBool = true;
-		functionCounter = 1;
-		// Clear the timer
-		waitTimerFunc();
-		// Start a new timer
-		waitTimer = setTimeout(waitTimerFunc, 600000);
-		// Log the location
-		logNotification = notificationObj;
-		notificationSendObj = notificationObj;
-		// Send PD an alert of the location
-		sendNotification();
-	// If the timer ends set the location to null & clear the timer
-	} else if (waitTimer == 600){
-		notificationObj == null;
-		waitTimerFunc();
-	}
+        clearTimer();
+        waitTimer = setTimeout(clearTimer, 600000);
+        logLastLocation = locationStringObj;
+        pdPingObj = locationStringObj;
+        sendNotification();
+    } else if (waitTimer == 600) {
+		timeBool = false;
+		functionCounter = 0;
+		locationStringObj = null;
+		logLastLocation = null;
+        clearTimer();
+    }
 });
