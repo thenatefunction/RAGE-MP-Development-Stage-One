@@ -82,8 +82,6 @@ function checkAreaStatus() {
                 crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
                 // Store the location information in a variable
                 locationObj = ('Shots fired in a rich area at: ' + streetName + ' - ' + crossingRoad);
-                // Convert the location variable to a string variable
-                locationStringObj = JSON.stringify(locationObj);
                 // If the area is a poor zone then the chance of PD being pinged is 15%
             } else if (zone == poorAreas[j] && chanceOfPD < 0.15) {
                 // If so retrieve the street name / crossing road information
@@ -92,11 +90,11 @@ function checkAreaStatus() {
                 crossingRoad = mp.game.ui.getStreetNameFromHashKey(getStreet.crossingRoad); // Return string, if exist
                 // Store the location information in a variable
                 locationObj = ('Shots fired in a poor area at: ' + streetName + ' - ' + crossingRoad);
-                // Convert the location variable to a string variable
-                locationStringObj = JSON.stringify(locationObj);
             }
         }
     }
+	// Convert the location variable to a string variable
+    locationStringObj = JSON.stringify(locationObj);
 }
 
 // Call server-side function for pinging PD with the location of shots fired
