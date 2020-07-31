@@ -1,16 +1,7 @@
 let skins = require('./configs/skins.json').Skins;
 let spawnPoints = require('./configs/spawn_points.json').SpawnPoints;
-// Initialize a function counter
-let functionCounter = 0;
-// Initialize a timer boolean variable to false
-let timeBool = false;
-// Initialize a wait timer, a log variable and a ping variable
-let waitTimer;
-let logLastLocation;
+// Initialize object for holding ping information
 let pdPingObj;
-// Initialize variables for holding player object and player id
-let playerVar;
-let playerID;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -137,44 +128,10 @@ mp.events.add('clientData', function() {
     }
 });
 
-// Function to clear the timer
-function clearTimer() {
-    clearTimeout(waitTimer);
-}
-
-// Function to send PD an alert
-function sendNotification() {
-    console.log(pdPingObj);
-}
-
 // Function activates if client-side calls the remote function "shotsFired"
 mp.events.add("shotsFired", (player, locationStringObj) => {
-	// Get player object
-	playerVar = (player);
-	// Retrieve player ID
-	playerID = ([playerVar.id]);
-    if (locationStringObj != null && functionCounter != 1 && timeBool == false) {
-        timeBool = true;
-		functionCounter = 1;
-        waitTimer = setTimeout(clearTimer, 600000);
-        logLastLocation = locationStringObj;
+    if (locationStringObj != null) {
         pdPingObj = locationStringObj;
-        sendNotification();
-    } else if (timeBool == true && functionCounter == 1 && logLastLocation == locationStringObj) {
-
-    } else if (locationStringObj != logLastLocation) {
-		timeBool = true;
-		functionCounter = 1;
-        clearTimer();
-        waitTimer = setTimeout(clearTimer, 600000);
-        logLastLocation = locationStringObj;
-        pdPingObj = locationStringObj;
-        sendNotification();
-    } else if (waitTimer == 600) {
-		timeBool = false;
-		functionCounter = 0;
-		locationStringObj = null;
-		logLastLocation = null;
-        clearTimer();
+        console.log(pdPingObj);
     }
 });
