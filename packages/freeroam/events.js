@@ -8,6 +8,9 @@ let timeBool = false;
 let waitTimer;
 let logLastLocation;
 let pdPingObj;
+// Initialize variables for holding player object and player id
+let playerVar;
+let playerID;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -146,6 +149,10 @@ function sendNotification() {
 
 // Function activates if client-side calls the remote function "shotsFired"
 mp.events.add("shotsFired", (player, locationStringObj) => {
+	// Get player object
+	playerVar = (player);
+	// Retrieve player ID
+	playerID = ([playerVar.id]);
     if (locationStringObj != null && functionCounter != 1 && timeBool == false) {
         timeBool = true;
 		functionCounter = 1;
