@@ -30,7 +30,7 @@ let poorArrayLength = poorAreas.length;
 let locationObj;
 let locationStringObj;
 
-// Initialize a function counter
+// Initialize a function counter to 0
 let functionCounter = 0;
 
 // Initialize a timer boolean variable to false
@@ -42,6 +42,8 @@ let logLastLocation;
 
 // Get a random number variable for working out chance of PD being alerted
 let chanceOfPD = Math.random();
+
+let locationRetrieved;
 
 // Creating browser.
 mp.events.add('guiReady', () => {
@@ -97,42 +99,57 @@ function checkAreaStatus() {
     locationStringObj = JSON.stringify(locationObj);
 }
 
-// Call server-side function for pinging PD with the location of shots fired
+// Call function for sending the location and status of area of shots fired
 let sendLocationToServer = () => {
     mp.events.callRemote("shotsFired", (player, locationStringObj));
 };
+
+let sendPing = () => {
+    mp.events.callRemote("sendFinalPing", (player, locationRetrieved));
+};
+
+// This only gets executed if called on the server side
+let getLocationInfo = (locationGot) => {
+    if (locationGot != null && functionCounter != 1 && timeBool == false) {
+        // Start a timer
+        timeBool = true;
+        functionCounter = 1;
+        waitTimer = setTimeout(clearTimer, 600000);
+        // Log the last location
+        logLastLocation = locationGot;
+		locationRetrieved = locationGot;
+		sendPing();
+    } else if (timeBool == true && functionCounter == 1 && logLastLocation == locationGot) {
+
+    } else if (locationGot != logLastLocation) {
+        // Start a timer
+        timeBool = true;
+        functionCounter = 1;
+        clearTimer();
+        waitTimer = setTimeout(clearTimer, 600000);
+        // Log the last location
+        logLastLocation = locationGot;
+		locationRetrieved = locationGot;
+        sendPing();
+    } else if (waitTimer == 600) {
+        // If timer reaches 10 minutes clear it and reset location variables to null
+        timeBool = false;
+        functionCounter = 0;
+        locationGot = null;
+        logLastLocation = null;
+        clearTimer();
+    }
+};
+// To be called by server
+mp.events.add('sendPingToPD', getLocationInfo);
 
 // Checks for the event of a shot fired
 mp.events.add('playerWeaponShot', (targetPosition, targetEntity) => {
     // Check the area status rich / poor
     checkAreaStatus();
-    if (locationStringObj != null && functionCounter != 1 && timeBool == false) {
-        // Start a timer
-        timeBool = true;
-        functionCounter = 1;
-        waitTimer = setTimeout(clearTimer, 600000);
-        // Log the last location
-        logLastLocation = locationStringObj;
-        // Send location to the server
-        sendLocationToServer();
-    } else if (timeBool == true && functionCounter == 1 && logLastLocation == locationStringObj) {
-
-    } else if (locationStringObj != logLastLocation) {
-        // Start a timer
-        timeBool = true;
-        functionCounter = 1;
-        clearTimer();
-        waitTimer = setTimeout(clearTimer, 600000);
-        // Log the last location
-        logLastLocation = locationStringObj;
-        // Send location to the server
-        sendLocationToServer();
-    } else if (waitTimer == 600) {
-        // If timer reaches 10 minutes clear it and reset location variables to null
-        timeBool = false;
-        functionCounter = 0;
-        locationStringObj = null;
-        logLastLocation = null;
-        clearTimer();
-    }
+	// If a area and status is returned
+	if (locationStringObj != null){
+		// Call this function to send to server
+		sendLocationToServer();
+	}
 });

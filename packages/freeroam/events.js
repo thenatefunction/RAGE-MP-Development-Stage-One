@@ -1,7 +1,11 @@
 let skins = require('./configs/skins.json').Skins;
 let spawnPoints = require('./configs/spawn_points.json').SpawnPoints;
-// Initialize object for holding ping information
-let pdPingObj;
+// Initialize array to hold online players
+let onlinePlayers = [];
+let onlinePlayersLength;
+// Initalize location variable
+let locationVar;
+let locationPing;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -128,14 +132,49 @@ mp.events.add('clientData', function() {
     }
 });
 
-// Function to send a ping to PD (Console for now)
-function sendLocationPing(pdPingObj){
-	console.log(pdPingObj);
+// Function to ping PD
+function pingPD(locationPing){
+	console.log(locationPing);
 }
+
+// Get all current online players and push to an array
+let getOnlineIDs = () => {
+	mp.players.forEach((player) => {
+			onlinePlayers.push(player.id);
+		}
+	);
+	onlinePlayersLength = onlinePlayers.length;
+};
+
 // Function activates if client-side calls the remote function "shotsFired"
 mp.events.add("shotsFired", (player, locationStringObj) => {
-    if (locationStringObj != null) {
-        pdPingObj = locationStringObj;
-		sendLocationPing(pdPingObj);
-    }
+	// Get all current online players
+	getOnlineIDs();
+	// Store the location retrieved from client-side
+	locationVar = locationStringObj;
+	for(i = 0; i < onlinePlayersLength; i++){
+	// If the current player is online and the location variable is not empty
+		if([player.id] == onlinePlayers[i] && locationVar != null){
+			// Reset the online players variable
+			onlinePlayers = [];
+			// Call the client-side function sendPingToPD
+			player.call(`sendPingToPD`, [locationVar]);
+		}
+	}
+});
+
+// Ping PD from server-side
+mp.events.add("sendFinalPing", (player, locationRetrieved) => {
+	// Get all current online players
+	getOnlineIDs();
+	// Store the location retrieved from client-side
+	locationPing = locationRetrieved;
+	for(i = 0; i < onlinePlayersLength; i++){
+	// If the current player is online and the location variable is not empty
+		if([player.id] == onlinePlayers[i] && locationPing != null){
+			// Reset the online players variable
+			onlinePlayers = [];
+			pingPD(locationPing);
+		}
+	}
 });
