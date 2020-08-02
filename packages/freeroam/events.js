@@ -1,4 +1,4 @@
-let skins       = require('./configs/skins.json').Skins;
+let skins = require('./configs/skins.json').Skins;
 let spawnPoints = require('./configs/spawn_points.json').SpawnPoints;
 
 // Create & populate rich and poor area arrays
@@ -26,12 +26,11 @@ let functionCounter = 0;
 let timeBool = false;
 // Initialize variable for holding the last pinged location
 let lastPing;
-// Initialize minutes for the timer
-let minutesForTheTimer = 600000;
-// Initialize wait timer
-let waitTimer;
 // Initialize rich or poor area string
 let richOrPoorStr;
+// Initialize minutes for the timer
+let minutesForTheTimer;
+let minutesForTheTimerTwo;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -91,158 +90,153 @@ mp.events.add('clientData', function() {
     let args = JSON.parse(arguments[1]);
 
     switch (args[0]) {
-    // Suicide.
-    case 'kill':
-        player.health = 0;
+        // Suicide.
+        case 'kill':
+            player.health = 0;
 
-        break;
-    // Change skin.
-    case 'skin':
-        player.model = args[1];
+            break;
+            // Change skin.
+        case 'skin':
+            player.model = args[1];
 
-        break;
-    // Creating new vehicle for player.
-    case 'vehicle':
-        // If player has vehicle - change model.
-        if (player.customData.vehicle) {
-            let pos = player.position;
-            pos.x += 2;
-            player.customData.vehicle.position = pos;
-            player.customData.vehicle.model = mp.joaat(args[1]);
-        // Else - create new vehicle.
-        } else {
-            let pos = player.position;
-            pos.x += 2;
-            player.customData.vehicle = mp.vehicles.new(mp.joaat(args[1]), pos);
-        }
-        // Hide vehicle buttons (bugfix).
-        player.call('hideVehicleButtons');
+            break;
+            // Creating new vehicle for player.
+        case 'vehicle':
+            // If player has vehicle - change model.
+            if (player.customData.vehicle) {
+                let pos = player.position;
+                pos.x += 2;
+                player.customData.vehicle.position = pos;
+                player.customData.vehicle.model = mp.joaat(args[1]);
+                // Else - create new vehicle.
+            } else {
+                let pos = player.position;
+                pos.x += 2;
+                player.customData.vehicle = mp.vehicles.new(mp.joaat(args[1]), pos);
+            }
+            // Hide vehicle buttons (bugfix).
+            player.call('hideVehicleButtons');
 
-        break;
-        // Weapon.
-    case 'weapon':
-        player.giveWeapon(mp.joaat(args[1]), 1000);
+            break;
+            // Weapon.
+        case 'weapon':
+            player.giveWeapon(mp.joaat(args[1]), 1000);
 
-        break;
-    // Repair the vehicle.
-    case 'fix':
-        if (player.vehicle)
-            player.vehicle.repair();
+            break;
+            // Repair the vehicle.
+        case 'fix':
+            if (player.vehicle)
+                player.vehicle.repair();
 
-        break;
-    // Flip the vehicle.
-    case 'flip':
-        if (player.vehicle) {
-            let rotation = player.vehicle.rotation;
-            rotation.y = 0;
-            player.vehicle.rotation = rotation;
-        }
-
-        break;
-    // Vehicle color or neon.
-    case 'server_color':
-        if (player.vehicle) {
-            if (args[1] == 'color') {
-                let colorPrimary = JSON.parse(args[2]);
-                let colorSecondary = JSON.parse(args[3]);
-                player.vehicle.setColourRGB(colorPrimary.r, colorPrimary.g, colorPrimary.b, colorSecondary.r, colorSecondary.g, colorSecondary.b);
+            break;
+            // Flip the vehicle.
+        case 'flip':
+            if (player.vehicle) {
+                let rotation = player.vehicle.rotation;
+                rotation.y = 0;
+                player.vehicle.rotation = rotation;
             }
 
-            if (args[1] == 'neon') {
-                let color = JSON.parse(args[2]);
-                player.vehicle.setNeonColour(color.r, color.g, color.b);
-            }
-        }
+            break;
+            // Vehicle color or neon.
+        case 'server_color':
+            if (player.vehicle) {
+                if (args[1] == 'color') {
+                    let colorPrimary = JSON.parse(args[2]);
+                    let colorSecondary = JSON.parse(args[3]);
+                    player.vehicle.setColourRGB(colorPrimary.r, colorPrimary.g, colorPrimary.b, colorSecondary.r, colorSecondary.g, colorSecondary.b);
+                }
 
-        break;
+                if (args[1] == 'neon') {
+                    let color = JSON.parse(args[2]);
+                    player.vehicle.setNeonColour(color.r, color.g, color.b);
+                }
+            }
+
+            break;
     }
 });
 
 // Send ping to PD (to console for now)
-function pingPD(){
-	console.log(pingMessageVar);
-}
-
-// Function to clear the timer
-function clearTimer(){
-	clearTimeout(waitTimer);
+function pingPD() {
+    console.log(pingMessageVar);
 }
 
 // Get all current online players and push them all to an array
 let getCurrentOnlinePlayers = () => {
-	mp.players.forEach((player) => {
-			currentOnlinePlayers.push(player.id);
-		}
-	);
-	onlinePlayersLength = currentOnlinePlayers.length;
+    mp.players.forEach((player) => {
+        currentOnlinePlayers.push(player.id);
+    });
+    onlinePlayersLength = currentOnlinePlayers.length;
 };
 
 // Function that activates when shots are fired
 let eventOfGunFired = (player, zone) => {
-	// Get all the current online players
-	getCurrentOnlinePlayers();
-	// Iterate through the online players array
-	for(i = 0; i < onlinePlayersLength; i++){
-		// Check to see if the current player is online
-		if([player.id] == currentOnlinePlayers[i] && zone != null){
-			// Iterate through the rich and poor areas
-			for (var i = 0; i < richArrayLength; i++) {
-				for (var j = 0; j < poorArrayLength; j++) {
-					// If the area is a rich zone then the chance of PD being pinged is 60%
-					if (zone == richAreas[i] && chanceOfPD < 0.60) {
-						richOrPoorStr = "Shots fired in a rich area: ";
-						player.call(`returnAreaZone`, [richOrPoorStr]);
-					}
-					// If the area is a poor zone then the chance of PD being pinged is 15%
-					if (zone == poorAreas[j] && chanceOfPD < 0.60) {
-						richOrPoorStr = "Shots fired in a poor area: ";
-						player.call(`returnAreaZone`, [richOrPoorStr]);
-					}
-				}
-			}
-		}
-	}
+    // Get all the current online players
+    getCurrentOnlinePlayers();
+    // Iterate through the online players array
+    for (i = 0; i < onlinePlayersLength; i++) {
+        // Check to see if the current player is online
+        if ([player.id] == currentOnlinePlayers[i] && zone != null) {
+            // Iterate through the rich and poor areas
+            for (var i = 0; i < richArrayLength; i++) {
+                for (var j = 0; j < poorArrayLength; j++) {
+                    // If the area is a rich zone then the chance of PD being pinged is 60%
+                    if (zone == richAreas[i] && chanceOfPD < 0.60) {
+                        richOrPoorStr = "Shots fired in a rich area: ";
+                        player.call(`returnAreaZone`, [richOrPoorStr]);
+                    }
+                    // If the area is a poor zone then the chance of PD being pinged is 15%
+                    if (zone == poorAreas[j] && chanceOfPD < 0.60) {
+                        richOrPoorStr = "Shots fired in a poor area: ";
+                        player.call(`returnAreaZone`, [richOrPoorStr]);
+                    }
+                }
+            }
+        }
+    }
 };
 mp.events.add("zoneFiredIn", eventOfGunFired);
 
 let eventPingMessageReceived = (player, pingMessage) => {
-	pingMessageVar = pingMessage;
-	// Clear the online player array to be used later
-	currentOnlinePlayers = [];
-	// If there is a ping message and a timer is not active
-	if (pingMessageVar != null && functionCounter == 0 && timeBool == false){
-		timeBool = true;
-		functionCounter = 1;
-		// Log last ping
-		lastPing = pingMessageVar;
-		getCurrentOnlinePlayers();
-		for(var i = 0; i < onlinePlayersLength; i++){
-			if([player.id] == currentOnlinePlayers[i]){
-				// Set the minutes for the timer
-				waitTimer = setTimeout(clearTimer, minutesForTheTimer);
-				// Ping PD with a message that shots have been fired
-				pingPD();
-			}
-		}
-		currentOnlinePlayers = [];
-	} else if (pingMessageVar == lastPing && functionCounter == 1 && timeBool == true){
-		// Do nothing
-	} else if (pingMessageVar != lastPing){
-		timeBool = true;
-		functionCounter = 1;
-		lastPing = pingMessageVar;
-		getCurrentOnlinePlayers();
-		for(var i = 0; i < onlinePlayersLength; i++){
-			if([player.id] == currentOnlinePlayers[i]){
-				clearTimer();
-				waitTimer = setTimeout(clearTimer, minutesForTheTimer);
-				pingPD();
-			}
-		}
-		currentOnlinePlayers = [];
-	} else if (waitTimer == 600){
-		clearTimer();
-		pingMessageVar = null;
-	}
+    pingMessageVar = pingMessage;
+    // Clear the online player array to be used later
+    currentOnlinePlayers = [];
+    // If there is a ping message and a timer is not active
+    if (pingMessageVar != null && functionCounter == 0 && timeBool == false) {
+        timeBool = true;
+        functionCounter = 1;
+        // Log last ping
+        lastPing = pingMessageVar;
+        getCurrentOnlinePlayers();
+        for (var i = 0; i < onlinePlayersLength; i++) {
+            if ([player.id] == currentOnlinePlayers[i]) {
+                pingPD();
+                minutesForTheTimer = 600000;
+                player.call(`startTimer`, [minutesForTheTimer]);
+            }
+        }
+        currentOnlinePlayers = [];
+    } else if (pingMessageVar == lastPing && functionCounter == 1 && timeBool == true) {
+        // Do nothing
+    } else if (pingMessageVar != lastPing) {
+        timeBool = true;
+        functionCounter = 1;
+        lastPing = pingMessageVar;
+        getCurrentOnlinePlayers();
+        for (var i = 0; i < onlinePlayersLength; i++) {
+            if ([player.id] == currentOnlinePlayers[i]) {
+                pingPD();
+                minutesForTheTimerTwo = 600000;
+                player.call(`startTimerTwo`, [minutesForTheTimerTwo]);
+            }
+        }
+        currentOnlinePlayers = [];
+    }
 };
 mp.events.add("pingMessageReceived", eventPingMessageReceived);
+
+let clearPingMessage = (player) => {
+    pingMessageVar = null;
+};
+mp.events.add("clearPingSent", clearPingMessage);
