@@ -12,25 +12,17 @@ let poorArrayLength = poorAreas.length;
 // Get a random number variable for working out chance of PD being alerted
 let chanceOfPD = Math.random();
 
-// Initialize array to hold online players
-let currentOnlinePlayers = [];
+// Initialize variable to hold online players
+let currentOnlinePlayers;
+
 // Variable to hold the length of current online players array for iterating
 let onlinePlayersLength;
 
 // Initialize ping message variable
 let pingMessageVar;
 
-// Initialize function counter
-let functionCounter = 0;
-// Initialize timer boolean
-let timeBool = false;
-// Initialize variable for holding the last pinged location
-let lastPing;
 // Initialize rich or poor area string
 let richOrPoorStr;
-// Initialize minutes for the timer
-let minutesForTheTimer;
-let minutesForTheTimerTwo;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
 mp.events.add('playerEnteredVehicle', (player) => {
@@ -164,6 +156,7 @@ function pingPD() {
 
 // Get all current online players and push them all to an array
 let getCurrentOnlinePlayers = () => {
+	currentOnlinePlayers = [];
     mp.players.forEach((player) => {
         currentOnlinePlayers.push(player.id);
     });
@@ -198,45 +191,9 @@ let eventOfGunFired = (player, zone) => {
 };
 mp.events.add("zoneFiredIn", eventOfGunFired);
 
-let eventPingMessageReceived = (player, pingMessage) => {
-    pingMessageVar = pingMessage;
-    // Clear the online player array to be used later
-    currentOnlinePlayers = [];
-    // If there is a ping message and a timer is not active
-    if (pingMessageVar != null && functionCounter == 0 && timeBool == false) {
-        timeBool = true;
-        functionCounter = 1;
-        // Log last ping
-        lastPing = pingMessageVar;
-        getCurrentOnlinePlayers();
-        for (var i = 0; i < onlinePlayersLength; i++) {
-            if ([player.id] == currentOnlinePlayers[i]) {
-                pingPD();
-                minutesForTheTimer = 600000;
-                player.call(`startTimer`, [minutesForTheTimer]);
-            }
-        }
-        currentOnlinePlayers = [];
-    } else if (pingMessageVar == lastPing && functionCounter == 1 && timeBool == true) {
-        // Do nothing
-    } else if (pingMessageVar != lastPing) {
-        timeBool = true;
-        functionCounter = 1;
-        lastPing = pingMessageVar;
-        getCurrentOnlinePlayers();
-        for (var i = 0; i < onlinePlayersLength; i++) {
-            if ([player.id] == currentOnlinePlayers[i]) {
-                pingPD();
-                minutesForTheTimerTwo = 600000;
-                player.call(`startTimerTwo`, [minutesForTheTimerTwo]);
-            }
-        }
-        currentOnlinePlayers = [];
-    }
+// Function to get the location information and send it to PD
+let retrieveMessage = (player, policePingMessageVar) => {
+    pingMessageVar = policePingMessageVar;
+	pingPD();
 };
-mp.events.add("pingMessageReceived", eventPingMessageReceived);
-
-let clearPingMessage = (player) => {
-    pingMessageVar = null;
-};
-mp.events.add("clearPingSent", clearPingMessage);
+mp.events.add("pdMessageGot", retrieveMessage);
