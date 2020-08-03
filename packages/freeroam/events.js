@@ -174,14 +174,14 @@ let eventOfGunFired = (player, zone) => {
             // Iterate through the rich and poor areas
             for (var i = 0; i < richArrayLength; i++) {
                 for (var j = 0; j < poorArrayLength; j++) {
-                    // If the area is a rich zone then the chance of PD being pinged is 40%
+                    // If the area is a rich zone then the chance of PD being pinged is 60%
                     if (zone == richAreas[i] && chanceOfPD < 0.60) {
                         richOrPoorStr = "Shots fired in a rich area: ";
                         player.call(`returnAreaZone`, [richOrPoorStr]);
                     } else {
 						
 					}
-                    // If the area is a poor zone then the chance of PD being pinged is 10%
+                    // If the area is a poor zone then the chance of PD being pinged is 15%
                     if (zone == poorAreas[j] && chanceOfPD < 0.15) {
                         richOrPoorStr = "Shots fired in a poor area: ";
                         player.call(`returnAreaZone`, [richOrPoorStr]);
