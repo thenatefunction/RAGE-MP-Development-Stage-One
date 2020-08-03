@@ -21,7 +21,7 @@ let onlinePlayersLength;
 // Initialize ping message variable
 let pingMessageVar;
 
-// Initialize rich or poor area string
+// Initialize rich or poor area string variable
 let richOrPoorStr;
 
 /* !!! REMOVE AFTER FIX (TRIGGERED FROM SERVER) !!! */
@@ -149,14 +149,14 @@ mp.events.add('clientData', function() {
     }
 });
 
-// Send ping to PD (to console for now)
+// Send the final ping to PD (to console for now)
 function pingPD() {
     console.log(pingMessageVar);
 }
 
 // Get all current online players and push them all to an array
 let getCurrentOnlinePlayers = () => {
-	currentOnlinePlayers = [];
+    currentOnlinePlayers = [];
     mp.players.forEach((player) => {
         currentOnlinePlayers.push(player.id);
     });
@@ -174,26 +174,32 @@ let eventOfGunFired = (player, zone) => {
             // Iterate through the rich and poor areas
             for (var i = 0; i < richArrayLength; i++) {
                 for (var j = 0; j < poorArrayLength; j++) {
-                    // If the area is a rich zone then the chance of PD being pinged is 60%
+                    // If the area is a rich zone then the chance of PD being pinged is 40%
                     if (zone == richAreas[i] && chanceOfPD < 0.60) {
                         richOrPoorStr = "Shots fired in a rich area: ";
                         player.call(`returnAreaZone`, [richOrPoorStr]);
-                    }
-                    // If the area is a poor zone then the chance of PD being pinged is 15%
+                    } else {
+						
+					}
+                    // If the area is a poor zone then the chance of PD being pinged is 10%
                     if (zone == poorAreas[j] && chanceOfPD < 0.15) {
                         richOrPoorStr = "Shots fired in a poor area: ";
                         player.call(`returnAreaZone`, [richOrPoorStr]);
-                    }
+                    } else {
+						
+					}
                 }
             }
         }
     }
 };
+// Name of event function to be called by the client
 mp.events.add("zoneFiredIn", eventOfGunFired);
 
-// Function to get the location information and send it to PD
+// Function to get the location information and send the final ping to PD
 let retrieveMessage = (player, policePingMessageVar) => {
     pingMessageVar = policePingMessageVar;
-	pingPD();
+    pingPD();
 };
+// Name of event function to be called by the client
 mp.events.add("pdMessageGot", retrieveMessage);
