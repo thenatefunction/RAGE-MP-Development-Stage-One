@@ -55,7 +55,7 @@ let eventOfGunFired = (player, zone) => {
 						
 					}
                     // If the area is a poor zone then the chance of PD being pinged is 15%
-                    if (zone == poorAreas[j] && chanceOfPD < 0.60) {
+                    if (zone == poorAreas[j] && chanceOfPD < 0.15) {
                         richOrPoorStr = "Shots fired in a poor area: ";
                         player.call(`returnAreaZone`, [richOrPoorStr]);
                     } else {
